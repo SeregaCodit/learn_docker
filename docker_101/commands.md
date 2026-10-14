@@ -1,0 +1,11 @@
+* **`docker build -t <image_name>`**  - crate a new image
+* **`xhost +local:docker`** - it allows the host's X server to accept connections from local Docker containers.
+* **`docker run -it --network=host --ipc=host -v /tmp/.X11-unix:/tmp/.X11-unix:rw --env=DISPLAY <image_name>`**:
+    * `-i` - interactive mode. leaves standard input (STDIN) open. This allows you to type commands into the container's console.
+    * `-t` - allocates a pseudo-terminal. Thanks to it, you can see the usual invitation string (for example, ros@pivden-pc:~$), as well as syntax highlighting and auto-completion using the Tab key.
+    * `--network=host` - Completely disables the network isolation of the container. The container uses your host computer's network stack directly.
+    * `--ipc=host` - 
+    Allows the container to use shared memory of the host system for interprocess data exchange (IPC). In ROS 2, Zero-Copy technology is used through shared memory to transfer "heavy" data (for example, clouds of points from lidars or video streams from high-resolution cameras) between nodes on the same machine. Without the --ipc=host flag, data will be copied over the network, which will cause a huge delay (latency) and load on the processor.
+    * `-v /tmp/.X11-unix:/tmp/.X11-unix:rw` - Mounts (-v or --volume) a special Unix socket through which Linux draws a graphical interface (application windows). The tag :rw means read-write access.
+    • Why is it for ROS: There is no video server inside the Docker container by default. By throwing this socket, you allow graphics programs from the container (Rviz2, Gazebo, rqt) to send windowing commands to the X server on your host computer.
+    * `-env=DISPLAY` - Passes the environment variable DISPLAY from the host inside the container (usually it has the value :0 or :1). Why is it for ROS: Unix socket (from the previous point) is just a communication channel. But the program needs to know what specific display of your computer displays the window. The DISPLAY variable tells the graphic libraries (Qt, GTK, OpenGL) where exactly to translate the picture.
