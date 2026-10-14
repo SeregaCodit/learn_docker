@@ -15,13 +15,12 @@ RUN apt-get update && apt-get install -y \
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-COPY config/ /site_config/ 
 
+# Create a non-root user or rename default existing
 ARG USERNAME=ros
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 
-# Create a non-root user or rename default existing
 RUN if id -u ${USER_GID} >/dev/null 2>&1; then \
         EXISTING_USER=$(id -nu ${USER_GID}); \
         usermod -l ${USERNAME} ${EXISTING_USER}; \
@@ -34,12 +33,6 @@ RUN if id -u ${USER_GID} >/dev/null 2>&1; then \
     && mkdir -p /home/${USERNAME}/.config \
     && chown -R ${USER_GID}:${USER_GID} /home/${USERNAME}/.config
 
-
-# setup autocomplete
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/${USERNAME}/.bashrc
-RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/${USERNAME}/.bashrc
-
-
 # Set up sudo
 RUN apt-get update \
     && apt-get install -y sudo \
@@ -49,6 +42,19 @@ RUN apt-get update \
 
 USER ${USERNAME}
 
+# setup autocompletes
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/${USERNAME}/.bashrc
+RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/${USERNAME}/.bashrc
+
+
+# rosdep update
+RUN rosdep update
+
+WORKDIR /ros2_ws
+ENV ROS_DISTRO=${ROS_DISTRO}
+ENV SHELL=/bin/bash
+
+RUN chmod +x /entrypoint.sh
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 CMD ["bash"]
